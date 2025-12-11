@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: Generic Routing Framework API
+  description: API specification for the Generic Routing Framework
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@aciworldwide.com
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+
+paths:
+  /api/{entity}:
+    post:
+      operationId: entity.create
+      summary: Create a new entity
+      description: Create an entity in the specified collection
+      tags:
+        - Entities
+      parameters:
+        - name: entity
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Plural entity name (e.g. users, products)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityCreateRequest'
+      responses:
+        '201':
+          description: Entity created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/{entity}/{entityId}:
+    get:
+      operationId: entity.getById
+      summary: Get entity by ID
+      description: Retrieve a single entity by its ID
+      tags:
+        - Entities
+      parameters:
+        - name: entity
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Plural entity name
+        - name: entityId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Entity identifier
+      responses:
+        '200':
+          description: Entity retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityResponse'
+        '404':
+          description: Entity not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    EntityCreateRequest:
+      $ref: 'schemas/users.yaml#/UserPayload'
+    EntityResponse:
+      $ref: 'schemas/users.yaml#/UserResponse'
+    ErrorResponse:
+      $ref: 'schemas/common.yaml#/ErrorResponse'

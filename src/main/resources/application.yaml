@@ -1,3 +1,16 @@
 spring:
   application:
     name: Generic-Routing-Framework
+  main:
+    web-application-type: none
+
+# Vert.x HTTP Server Configuration
+server:
+  host: ${SERVER_HOST:0.0.0.0}
+  port: ${SERVER_PORT:8080}
+  timeout: ${SERVER_TIMEOUT:30000}
+
+# OpenAPI Configuration
+openapi:
+  spec:
+    path: ${OPENAPI_SPEC_PATH:openapi/api-spec.yaml}

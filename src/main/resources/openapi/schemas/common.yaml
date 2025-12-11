@@ -1,0 +1,23 @@
+ErrorResponse:
+  type: object
+  properties:
+    error:
+      type: string
+      description: Error category
+      example: "Validation Error"
+    message:
+      type: string
+      description: Human-readable error
+      example: "Invalid input data"
+    timestamp:
+      type: string
+      format: date-time
+      description: Error timestamp
+      example: "2025-12-10T12:34:56Z"
+    details:
+      type: array
+      items:
+        type: string
+      description: Additional context
+      example: ["Name is required", "Email format is invalid"]
+
