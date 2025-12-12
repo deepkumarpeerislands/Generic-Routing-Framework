@@ -1,0 +1,41 @@
+rules:
+  # Enrichment: Set payment processing metadata
+  - id: payments.create.metadataEnrichment
+    entity: payments
+    operationId: entity.create
+    actions:
+      - "#payload.put('processedAt', T(java.time.Instant).now().toString())"
+      - "#payload.put('status', 'PENDING')"
+      - "#payload.put('transactionId', T(java.util.UUID).randomUUID().toString())"
+
+  # Enrichment: Calculate fees based on amount
+  - id: payments.create.feeCalculation
+    entity: payments
+    operationId: entity.create
+    actions:
+      - "#payload.put('processingFee', #payload.getDouble('amount') != null ? #payload.getDouble('amount') * 0.029 : 0.0)"
+
+  # Validation: Amount must be positive
+  - id: payments.create.amountPositive
+    entity: payments
+    operationId: entity.create
+    condition: "#payload.getDouble('amount') == null or #payload.getDouble('amount') <= 0"
+    message: "Payment amount must be greater than zero"
+
+  # Validation: Currency is required
+  - id: payments.create.currencyRequired
+    entity: payments
+    operationId: entity.create
+    condition: "#payload.getString('currency') == null or #payload.getString('currency').isBlank()"
+    message: "Currency is required"
+
+  # Combined: Normalize currency and validate it's supported
+  - id: payments.create.currencyNormalization
+    entity: payments
+    operationId: entity.create
+    actions:
+      - "#payload.put('currency', #payload.getString('currency') != null ? #payload.getString('currency').toUpperCase() : null)"
+    condition: "#payload.getString('currency') != null and !T(java.util.Arrays).asList('USD', 'EUR', 'GBP').contains(#payload.getString('currency'))"
+    message: "Currency must be one of: USD, EUR, GBP"
+
+

@@ -1,6 +1,6 @@
 package com.aciworldwide.verticle;
 
-import com.aciworldwide.handler.GenericCrudHandler;
+import com.aciworldwide.handler.GenericRoutingHandler;
 import com.aciworldwide.registry.RouterRegistry;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -20,10 +20,10 @@ public class OpenAPIVerticle extends AbstractVerticle {
     public static final String ROUTER_READY_ADDRESS = "router.openapi.ready";
     
     private RouterBuilder routerBuilder;
-    private final GenericCrudHandler genericCrudHandler;
+    private final GenericRoutingHandler genericRoutingHandler;
     
-    public OpenAPIVerticle(GenericCrudHandler genericCrudHandler) {
-        this.genericCrudHandler = genericCrudHandler;
+    public OpenAPIVerticle(GenericRoutingHandler genericRoutingHandler) {
+        this.genericRoutingHandler = genericRoutingHandler;
     }
 
     @Override
@@ -120,20 +120,11 @@ public class OpenAPIVerticle extends AbstractVerticle {
         return config().getString("openapi.spec.path");
     }
 
-    /**
-     * Configures operation handlers by operationId.
-     */
     private void configureOperationHandlers() {
-        if (routerBuilder != null && genericCrudHandler != null) {
-
-            // // Add handlers by operationId using method references
-            // routerBuilder.operation("createUser").handler(genericCrudHandler::handleCreateUser);
-            // routerBuilder.operation("getUserById").handler(genericCrudHandler::handleGetUserById);
-           
-
+        if (routerBuilder != null && genericRoutingHandler != null) {
             routerBuilder.operations().forEach(operation -> {
                 String operationId = operation.getOperationId();
-                operation.handler(ctx -> genericCrudHandler.handle(operationId, ctx));
+                operation.handler(ctx -> genericRoutingHandler.handle(operationId, ctx));
             });
             log.debug("Operation handlers configured");
         }

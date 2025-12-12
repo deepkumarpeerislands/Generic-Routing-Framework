@@ -39,21 +39,20 @@ public class VerticleDeploymentService {
         vertx.deployVerticle(openAPIVerticle, options)
             .onSuccess(deploymentId -> {
                 this.openApiDeploymentId = deploymentId;
-                log.info("✅ OpenAPI Verticle deployed: {}", deploymentId);
-                
-                // Then deploy HTTP Server Verticle
+                log.info("OpenAPI Verticle deployed: {}", deploymentId);
+
                 vertx.deployVerticle(httpServerVerticle, options)
                     .onSuccess(httpDeploymentId -> {
                         this.httpServerDeploymentId = httpDeploymentId;
-                        log.info("✅ HTTP Server Verticle deployed: {}", httpDeploymentId);
-                        log.info("🚀 Application ready - HTTP server listening!");
+                        log.info("HTTP Server Verticle deployed: {}", httpDeploymentId);
+                        log.info("Application ready - HTTP server listening");
                     })
                     .onFailure(throwable -> {
-                        log.error("❌ Failed to deploy HTTP Server Verticle", throwable);
+                        log.error("Failed to deploy HTTP Server Verticle", throwable);
                     });
             })
             .onFailure(throwable -> {
-                log.error("❌ Failed to deploy OpenAPI Verticle", throwable);
+                log.error("Failed to deploy OpenAPI Verticle", throwable);
             });
     }
 
@@ -63,18 +62,18 @@ public class VerticleDeploymentService {
         
         if (httpServerDeploymentId != null) {
             vertx.undeploy(httpServerDeploymentId)
-                .onSuccess(v -> log.info("✅ HTTP Server Verticle stopped"))
-                .onFailure(throwable -> log.error("❌ Error stopping HTTP Server Verticle", throwable));
+                .onSuccess(v -> log.info("HTTP Server Verticle stopped"))
+                .onFailure(throwable -> log.error("Error stopping HTTP Server Verticle", throwable));
         }
         
         if (openApiDeploymentId != null) {
             vertx.undeploy(openApiDeploymentId)
-                .onSuccess(v -> log.info("✅ OpenAPI Verticle stopped"))
-                .onFailure(throwable -> log.error("❌ Error stopping OpenAPI Verticle", throwable));
+                .onSuccess(v -> log.info("OpenAPI Verticle stopped"))
+                .onFailure(throwable -> log.error("Error stopping OpenAPI Verticle", throwable));
         }
         
         vertx.close()
-            .onSuccess(v -> log.info("✅ Vert.x instance closed"))
-            .onFailure(throwable -> log.error("❌ Error closing Vert.x", throwable));
+            .onSuccess(v -> log.info("Vert.x instance closed"))
+            .onFailure(throwable -> log.error("Error closing Vert.x", throwable));
     }
 }

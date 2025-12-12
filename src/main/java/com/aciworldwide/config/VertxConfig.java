@@ -1,6 +1,6 @@
 package com.aciworldwide.config;
 
-import com.aciworldwide.handler.GenericCrudHandler;
+import com.aciworldwide.handler.GenericRoutingHandler;
 import com.aciworldwide.verticle.HttpServerVerticle;
 import com.aciworldwide.verticle.OpenAPIVerticle;
 import io.vertx.core.Vertx;
@@ -41,19 +41,12 @@ public class VertxConfig {
     }
 
     @Bean
-    public HttpServerVerticle httpServerVerticle(JsonObject serverConfig) {
-        HttpServerVerticle verticle = new HttpServerVerticle();
-        // Set configuration for the verticle
-        return verticle;
+    public HttpServerVerticle httpServerVerticle() {
+        return new HttpServerVerticle();
     }
 
     @Bean
-    public GenericCrudHandler genericHandler() {
-        return new GenericCrudHandler();
-    }
-
-    @Bean
-    public OpenAPIVerticle openAPIVerticle(GenericCrudHandler genericCrudHandler) {
-        return new OpenAPIVerticle(genericCrudHandler);
+    public OpenAPIVerticle openAPIVerticle(GenericRoutingHandler genericRoutingHandler) {
+        return new OpenAPIVerticle(genericRoutingHandler);
     }
 }

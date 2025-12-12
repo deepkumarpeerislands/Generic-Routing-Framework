@@ -1,0 +1,47 @@
+rules:
+  # Enrichment: Auto-set eligible field based on age
+  - id: users.create.eligibleEnrichment
+    entity: users
+    operationId: entity.create
+    actions:
+      - "#payload.put('eligible', #payload.getInteger('age') != null && #payload.getInteger('age') >= 30)"
+
+  # Enrichment: Set creation timestamp
+  - id: users.create.timestampEnrichment
+    entity: users
+    operationId: entity.create
+    actions:
+      - "#payload.put('createdAt', T(java.time.Instant).now().toString())"
+      - "#payload.put('expiresAt', T(java.time.Instant).now().plus(30, T(java.time.temporal.ChronoUnit).DAYS).toString())"
+
+  # Validation: Age must be 18 or older
+  - id: users.create.underage
+    entity: users
+    operationId: entity.create
+    condition: "#payload.getInteger('age') != null and #payload.getInteger('age') < 18"
+    message: "User must be 18 or older"
+
+  # Validation: Email is required
+  - id: users.create.emailRequired
+    entity: users
+    operationId: entity.create
+    condition: "#payload.getString('email') == null or #payload.getString('email').isBlank()"
+    message: "Email is required"
+
+  # Validation: Email format check
+  - id: users.create.emailFormat
+    entity: users
+    operationId: entity.create
+    condition: "#payload.getString('email') != null and !#payload.getString('email').matches('^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$')"
+    message: "Email format is invalid"
+
+  # Combined: Normalize email and validate it's not from blocked domains
+  - id: users.create.emailNormalization
+    entity: users
+    operationId: entity.create
+    actions:
+      - "#payload.put('email', #payload.getString('email') != null ? #payload.getString('email').toLowerCase().trim() : null)"
+    condition: "#payload.getString('email') != null and #payload.getString('email').endsWith('@blocked.com')"
+    message: "Email domain is not allowed"
+
+

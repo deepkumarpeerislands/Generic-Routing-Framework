@@ -14,3 +14,9 @@ server:
 openapi:
   spec:
     path: ${OPENAPI_SPEC_PATH:openapi/api-spec.yaml}
+
+# Business Validation Configuration
+validation:
+  business:
+    enabled: ${BUSINESS_VALIDATION_ENABLED:true}
+    base-path: ${BUSINESS_VALIDATION_BASE_PATH:validation/business}
