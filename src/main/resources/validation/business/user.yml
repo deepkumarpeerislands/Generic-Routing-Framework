@@ -44,4 +44,18 @@ rules:
     condition: "#payload.getString('email') != null and #payload.getString('email').endsWith('@blocked.com')"
     message: "Email domain is not allowed"
 
+  # Example: Using path parameters (for getById operations)
+  - id: users.getById.pathValidation
+    entity: users
+    operationId: entity.getById
+    condition: "#payload.getJsonObject('_path') == null or #payload.getJsonObject('_path').getString('entityId') == null"
+    message: "Entity ID is required in path"
+
+  # Example: Using query parameters (for list/search operations)
+  - id: users.list.queryValidation
+    entity: users
+    operationId: entity.list
+    condition: "#payload.getJsonObject('_query') != null and #payload.getJsonObject('_query').getString('limit') != null and T(Integer).parseInt(#payload.getJsonObject('_query').getString('limit')) > 100"
+    message: "Limit cannot exceed 100"
+
 

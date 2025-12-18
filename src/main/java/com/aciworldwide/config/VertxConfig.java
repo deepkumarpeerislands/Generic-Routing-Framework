@@ -1,6 +1,8 @@
 package com.aciworldwide.config;
 
 import com.aciworldwide.handler.GenericRoutingHandler;
+import com.aciworldwide.exception.handler.GlobalExceptionHandler;
+import com.aciworldwide.exception.mapper.ExceptionMapper;
 import com.aciworldwide.verticle.HttpServerVerticle;
 import com.aciworldwide.verticle.OpenAPIVerticle;
 import io.vertx.core.Vertx;
@@ -41,8 +43,13 @@ public class VertxConfig {
     }
 
     @Bean
-    public HttpServerVerticle httpServerVerticle() {
-        return new HttpServerVerticle();
+    public GlobalExceptionHandler globalExceptionHandler(ExceptionMapper exceptionMapper) {
+        return new GlobalExceptionHandler(exceptionMapper);
+    }
+
+    @Bean
+    public HttpServerVerticle httpServerVerticle(GlobalExceptionHandler globalExceptionHandler) {
+        return new HttpServerVerticle(globalExceptionHandler);
     }
 
     @Bean

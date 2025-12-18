@@ -1,15 +1,18 @@
 package com.aciworldwide.handler;
 
 import com.aciworldwide.dto.GenericApiResponse;
+import com.aciworldwide.exception.BusinessException;
+import com.aciworldwide.exception.BusinessValidationException;
+import com.aciworldwide.exception.ResourceNotFoundException;
+import com.aciworldwide.service.GenericCrudServiceI;
 import com.aciworldwide.validation.RequestValidator;
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Generic service handler for business logic pipeline.
@@ -24,64 +27,118 @@ import java.util.UUID;
 public class GenericServiceHandler {
 
     private final RequestValidator validator;
+    private final GenericCrudServiceI crudService;
 
-    public GenericServiceHandler(@Autowired(required = false) RequestValidator validator) {
+    public GenericServiceHandler(@Autowired(required = false) RequestValidator validator,
+                                GenericCrudServiceI crudService) {
         this.validator = validator;
+        this.crudService = crudService;
     }
 
     /**
      * Main business pipeline: validation → enrichment → service call.
      *
-     * @return GenericApiResponse with result or validation errors
+     * @return Future containing GenericApiResponse with result or failure
      */
-    public GenericApiResponse<?> handle(String entity, String operationId, String action, JsonObject payload) {
+    public Future<GenericApiResponse<?>> executeAction(String entity, String operationId, String action, JsonObject payload) {
         log.debug("Service handler processing: entity={}, operationId={}, action={}", entity, operationId, action);
 
-        // 1. Business validation & enrichment (mutates payload if actions exist)
-        Map<String, String> validationErrors = applyBusinessValidation(entity, operationId, payload);
-        if (!validationErrors.isEmpty()) {
-            return GenericApiResponse.error("Business validation failed", validationErrors);
-        }
+        return Future.future(promise -> {
+            try {
+                // 1. Business validation & enrichment (throws ValidationException if validation fails)
+                applyBusinessValidation(entity, operationId, payload);
 
-        // 2. Execute service logic based on action
-        return switch (action) {
-            case "create" -> createEntity(entity, payload);
-            case "getById" -> getEntityById(entity, payload);
-            default -> GenericApiResponse.error("Operation '" + operationId + "' is not implemented");
-        };
+                // 2. Execute service logic based on action using Future composition
+                Future<GenericApiResponse<?>> actionFuture = switch (action) {
+                    case "create" -> executeCreateAction(entity, payload);
+                    case "getById" -> executeGetByIdAction(entity, payload);
+                    case "update" -> executeUpdateAction(entity, payload);
+                    case "delete" -> executeDeleteAction(entity, payload);
+                    case "list" -> executeListAction(entity, payload);
+                    default -> Future.failedFuture(new BusinessException("Operation '" + operationId + "' is not implemented"));
+                };
+                
+                actionFuture
+                    .onSuccess(promise::complete)
+                    .onFailure(promise::fail);
+                    
+            } catch (Exception e) {
+                promise.fail(e);
+            }
+        });
     }
 
-    private Map<String, String> applyBusinessValidation(String entity, String operationId, JsonObject payload) {
+    private void applyBusinessValidation(String entity, String operationId, JsonObject payload) {
         if (validator == null) {
-            return Map.of();
+            return;
         }
-        return validator.validate(entity, operationId, payload);
+        Map<String, String> validationErrors = validator.validate(entity, operationId, payload);
+
+        // If there are validation errors, throw ValidationException instead of returning them
+        if (!validationErrors.isEmpty()) {
+            log.info("Business Validation Failed : "+validationErrors);
+            throw new BusinessValidationException("Business validation failed", validationErrors);
+        }
+
     }
 
-    private GenericApiResponse<JsonObject> createEntity(String entity, JsonObject payload) {
+    // Future-based action execution methods following Vert.x patterns
+    
+    private Future<GenericApiResponse<?>> executeCreateAction(String entity, JsonObject payload) {
         log.info("Creating entity [{}]", entity);
         log.debug("Payload after enrichment: {}", payload);
-
-        JsonObject createdEntity = new JsonObject()
-                .put("id", UUID.randomUUID().toString())
-                .put("entity", entity)
-                .put("payload", payload)
-                .put("createdAt", Instant.now().toString());
-
-        return GenericApiResponse.success("Entity created successfully", createdEntity);
+        
+        return crudService.create(entity, payload)
+            .map(createdEntity -> GenericApiResponse.success("Entity created successfully", createdEntity, 201));
     }
 
-    private GenericApiResponse<JsonObject> getEntityById(String entity, JsonObject payload) {
-        String entityId = payload.getString("entityId");
+    private Future<GenericApiResponse<?>> executeGetByIdAction(String entity, JsonObject payload) {
+        // Extract entityId from path parameters
+        String entityId = extractEntityId(payload);
+        
         log.info("Retrieving entity [{}] with id [{}]", entity, entityId);
 
-        JsonObject fetched = new JsonObject()
-                .put("id", entityId)
-                .put("entity", entity)
-                .put("payload", new JsonObject().put("status", "dummy"))
-                .put("retrievedAt", Instant.now().toString());
-
-        return GenericApiResponse.success("Entity retrieved successfully", fetched);
+        return crudService.getById(entity, entityId)
+            .map(fetchedEntity -> GenericApiResponse.success("Entity retrieved successfully", fetchedEntity, 200));
+    }
+    
+    private Future<GenericApiResponse<?>> executeUpdateAction(String entity, JsonObject payload) {
+        String entityId = extractEntityId(payload);
+        
+        log.info("Updating entity [{}] with id [{}]", entity, entityId);
+        
+        return crudService.update(entity, entityId, payload)
+            .map(updatedEntity -> GenericApiResponse.success("Entity updated successfully", updatedEntity, 200));
+    }
+    
+    private Future<GenericApiResponse<?>> executeDeleteAction(String entity, JsonObject payload) {
+        String entityId = extractEntityId(payload);
+        
+        log.info("Deleting entity [{}] with id [{}]", entity, entityId);
+        
+        return crudService.delete(entity, entityId)
+            .map(v -> GenericApiResponse.success("Entity deleted successfully", 204));
+    }
+    
+    private Future<GenericApiResponse<?>> executeListAction(String entity, JsonObject payload) {
+        log.info("Listing entities [{}]", entity);
+        
+        // Extract filters from query parameters
+        JsonObject filters = payload.getJsonObject("_query", new JsonObject());
+        
+        return crudService.list(entity, filters)
+            .map(listResult -> GenericApiResponse.success("Entities retrieved successfully", listResult, 200));
+    }
+    
+    private String extractEntityId(JsonObject payload) {
+        JsonObject pathParams = payload.getJsonObject("_path");
+        if (pathParams != null) {
+            String entityId = pathParams.getString("entityId");
+            if (entityId != null && !entityId.trim().isEmpty()) {
+                return entityId;
+            }
+        }
+        throw new BusinessValidationException("Entity ID is required in path parameters");
     }
 }
 

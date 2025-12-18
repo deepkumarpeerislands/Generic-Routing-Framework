@@ -11,6 +11,7 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Business validation + enrichment implementation.
@@ -26,6 +27,7 @@ public class BusinessValidationService implements RequestValidator {
 
     private final ExpressionParser parser = new SpelExpressionParser();
     private final ClasspathValidationRepository repository;
+    private final Map<String, Expression> expressionCache = new ConcurrentHashMap<>();
 
     public BusinessValidationService(ClasspathValidationRepository repository) {
         this.repository = repository;
@@ -38,6 +40,10 @@ public class BusinessValidationService implements RequestValidator {
             return Map.of();
         }
 
+    /*
+    * Creates a SpEL context where expressions can be evaluated
+    * Registers the payload as variable #payload (accessible in SpEL expressions) */
+
         StandardEvaluationContext context = new StandardEvaluationContext();
         context.setVariable("payload", payload);
 
@@ -46,7 +52,7 @@ public class BusinessValidationService implements RequestValidator {
             try {
                 executeActions(def, context);
                 evaluateValidation(def, context, violations);
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 log.warn("Error processing validation '{}' for entity '{}' op '{}': {}",
                         def.getId(), entity, operationId, e.getMessage());
                 violations.put(def.getId(), "Rule processing failed: " + e.getMessage());
@@ -64,7 +70,11 @@ public class BusinessValidationService implements RequestValidator {
             if (expr == null || expr.isBlank()) {
                 continue;
             }
-            parser.parseExpression(expr).getValue(context);
+
+            /*
+            * Parses the SpEL expression string into an executable Expression object
+            * Executes the expression using the context (which has #payload variable)*/
+            getParsedExpression(expr).getValue(context);
         }
     }
 
@@ -74,11 +84,22 @@ public class BusinessValidationService implements RequestValidator {
         if (!def.hasValidation()) {
             return;
         }
-        Expression condition = parser.parseExpression(def.getCondition());
+        Expression condition = getParsedExpression(def.getCondition());
         Boolean violated = condition.getValue(context, Boolean.class);
         if (Boolean.TRUE.equals(violated)) {
             violations.put(def.getId(), def.getMessage());
         }
+    }
+
+    /**
+     * Gets a parsed SpEL expression from cache, or parses and caches it on first use.
+     * Thread-safe via ConcurrentHashMap.
+     *
+     * @param expr the SpEL expression string
+     * @return compiled Expression object
+     */
+    private Expression getParsedExpression(String expr) {
+        return expressionCache.computeIfAbsent(expr, parser::parseExpression);
     }
 }
 

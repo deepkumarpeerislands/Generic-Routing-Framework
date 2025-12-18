@@ -39,6 +39,9 @@ dependencies {
 	implementation 'io.vertx:vertx-web-validation:4.5.9'
 	implementation 'io.vertx:vertx-json-schema:4.5.9'
 	
+	// Resilience4j for Circuit Breaker
+	implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.1.0'
+	
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

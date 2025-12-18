@@ -21,6 +21,8 @@ public class GenericApiResponse<T> {
 
     private String message;
 
+    private int statusCode;
+
     private Optional<T> data = Optional.empty();
 
     private Optional<Map<String, String>> errors = Optional.empty();
@@ -30,13 +32,15 @@ public class GenericApiResponse<T> {
      *
      * @param message the success message
      * @param data the response data
+     * @param statusCode the HTTP status code
      * @param <T> the type of data
      * @return GenericApiResponse response
      */
-    public static <T> GenericApiResponse<T> success(String message, T data) {
+    public static <T> GenericApiResponse<T> success(String message, T data, int statusCode) {
         GenericApiResponse<T> response = new GenericApiResponse<>();
         response.setStatus("success");
         response.setMessage(message);
+        response.setStatusCode(statusCode);
         response.setData(Optional.ofNullable(data));
         return response;
     }
@@ -45,13 +49,15 @@ public class GenericApiResponse<T> {
      * Creates a successful response without data.
      *
      * @param message the success message
+     * @param statusCode the HTTP status code
      * @param <T> the type of data
      * @return GenericApiResponse response
      */
-    public static <T> GenericApiResponse<T> success(String message) {
+    public static <T> GenericApiResponse<T> success(String message, int statusCode) {
         GenericApiResponse<T> response = new GenericApiResponse<>();
         response.setStatus("success");
         response.setMessage(message);
+        response.setStatusCode(statusCode);
         return response;
     }
 
@@ -60,13 +66,15 @@ public class GenericApiResponse<T> {
      *
      * @param message the error message
      * @param errors the error details
+     * @param statusCode the HTTP status code
      * @param <T> the type of data
      * @return GenericApiResponse response
      */
-    public static <T> GenericApiResponse<T> error(String message, Map<String, String> errors) {
+    public static <T> GenericApiResponse<T> error(String message, Map<String, String> errors, int statusCode) {
         GenericApiResponse<T> response = new GenericApiResponse<>();
         response.setStatus("error");
         response.setMessage(message);
+        response.setStatusCode(statusCode);
         response.setErrors(Optional.ofNullable(errors));
         return response;
     }
@@ -75,13 +83,15 @@ public class GenericApiResponse<T> {
      * Creates an error response without error details.
      *
      * @param message the error message
+     * @param statusCode the HTTP status code
      * @param <T> the type of data
      * @return GenericApiResponse response
      */
-    public static <T> GenericApiResponse<T> error(String message) {
+    public static <T> GenericApiResponse<T> error(String message, int statusCode) {
         GenericApiResponse<T> response = new GenericApiResponse<>();
         response.setStatus("error");
         response.setMessage(message);
+        response.setStatusCode(statusCode);
         return response;
     }
 }

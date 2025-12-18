@@ -1,5 +1,6 @@
 package com.aciworldwide.verticle;
 
+import com.aciworldwide.exception.handler.GlobalExceptionHandler;
 import com.aciworldwide.registry.RouterRegistry;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -15,8 +16,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HttpServerVerticle extends AbstractVerticle {
 
-    
+    private final GlobalExceptionHandler globalExceptionHandler;
     private HttpServer httpServer;
+    
+    public HttpServerVerticle(GlobalExceptionHandler globalExceptionHandler) {
+        this.globalExceptionHandler = globalExceptionHandler;
+    }
 
     @Override
     public void start(Promise<Void> startPromise) {
@@ -45,6 +50,10 @@ public class HttpServerVerticle extends AbstractVerticle {
                 startPromise.fail("Router not available");
                 return;
             }
+            
+            // Register global failure handler for all routes
+            router.route().failureHandler(globalExceptionHandler::handleFailure);
+            log.info("Global exception handler registered");
             
             // Configure HTTP server options
             HttpServerOptions serverOptions = createServerOptions();

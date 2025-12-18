@@ -19,8 +19,7 @@ UserPayload:
       example: "john.doe@example.com"
     age:
       type: integer
-      minimum: 18
-      maximum: 120
+
       description: The user's age
       example: 30
     eligible:

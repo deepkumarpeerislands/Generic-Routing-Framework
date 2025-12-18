@@ -5,6 +5,7 @@ import com.aciworldwide.validation.business.BusinessValidationService;
 import com.aciworldwide.validation.business.ClasspathValidationRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,6 +17,7 @@ import org.springframework.context.annotation.Configuration;
  *   validation.business.base-path: path to validation files (default: validations)
  */
 @Configuration
+@EnableCaching
 @ConditionalOnProperty(name = "validation.business.enabled", havingValue = "true", matchIfMissing = true)
 public class BusinessValidationConfig {
 

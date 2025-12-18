@@ -80,8 +80,6 @@ public class OpenAPIVerticle extends AbstractVerticle {
         // Add body handler first to parse JSON request bodies
         routerBuilder.rootHandler(io.vertx.ext.web.handler.BodyHandler.create());
         
-        // Configure operation handlers - this will be called from service
-        
         log.debug("RouterBuilder configured successfully");
     }
 
@@ -128,14 +126,5 @@ public class OpenAPIVerticle extends AbstractVerticle {
             });
             log.debug("Operation handlers configured");
         }
-    }
-
-    /**
-     * Gets the RouterBuilder instance.
-     *
-     * @return RouterBuilder instance
-     */
-    public RouterBuilder getRouterBuilder() {
-        return routerBuilder;
     }
 }
